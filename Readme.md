@@ -34,5 +34,7 @@ Typical problem I suppose we will have to face are:
 
 In the example file I've isolated as a single project the math.rs file adding some examples in main function and test functions of elementary math on some Uint256.
 
+So basically I just used the library **num256**, but crate could be extendend also to Uint512 in case of needing.
+
 This is just a draft and any comments, advice or ideas are welcome to go on!
 
