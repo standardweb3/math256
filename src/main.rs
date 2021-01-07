@@ -11,8 +11,8 @@ use num256::uint256::Uint256;
 mod errors;
 
 use crate::errors::{StdError, StdResult};
-use serde_json::{from_slice,to_vec};
-use base64;
+// use serde_json::{from_slice,to_vec};
+// use base64;
  
 
 /// A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
@@ -21,7 +21,24 @@ use base64;
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, JsonSchema)]
 pub struct Decimal(#[schemars(with = "String")] u128);
 
+/// A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0
+///
+/// The greatest possible value that can be represented is 115792089237316195423570985008687907853269984665640564039457,584007913129639935 (which is (2^256 - 1) / 10^18)
+#[derive( Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, JsonSchema)]
+pub struct DecimalUint256(#[schemars(with = "String")] Uint256);
+
 const DECIMAL_FRACTIONAL: u128 = 1_000_000_000_000_000_000;
+
+
+
+impl DecimalUint256{
+
+    pub fn DECIMAL_FRACTIONAL_U256()-> Uint256 { Uint256::from_str_radix("1_000_000_000_000_000_000", 10).unwrap() }
+
+    pub fn MAX() -> DecimalUint256{  DecimalUint256(Uint256::max_value())  }
+
+
+}
 
 impl Decimal {
     pub const MAX: Decimal = Decimal(u128::MAX);
@@ -389,6 +406,8 @@ fn main()
   //Just an example of the idea of adding numbers greater than u128
   let max128 = u128::MAX;
   
+  println!("{:x?}",br#""8.76""#);
+
   println!("This is maximum u128 value {:?}",max128); 
 
   let max128_bytes = max128.to_le_bytes();
@@ -413,7 +432,7 @@ mod test {
     use super::*;
     use crate::errors::{StdError, StdResult};
     use serde_json::{from_slice,to_vec};
-    use base64;
+    // use base64;
     use std::convert::TryInto;
     use num256::uint256::Uint256;
 
