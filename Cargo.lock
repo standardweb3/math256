@@ -29,6 +29,7 @@ name = "math_256"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "lazy_static",
  "num-traits",
  "num256",
  "schemars",

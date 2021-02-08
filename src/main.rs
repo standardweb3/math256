@@ -6,7 +6,10 @@ use std::fmt::{self, Write};
 use std::iter::Sum;
 use std::ops;
 use std::str::FromStr;
-use num256::uint256::Uint256;
+use num256::uint256::{Uint256};
+
+#[macro_use]
+extern crate lazy_static;
 
 mod errors;
 
@@ -29,15 +32,69 @@ pub struct DecimalUint256(#[schemars(with = "String")] Uint256);
 
 const DECIMAL_FRACTIONAL: u128 = 1_000_000_000_000_000_000;
 
+lazy_static!{
+  //Decimal fractional with Uint 256
+  #[derive(Debug)]
+  static ref DECIMAL_FRACTIONAL_U256 : Uint256 = Uint256::from_str_radix("1_000_000_000_000_000_000", 10).unwrap();
+
+  //Max value for Uint 256
+  #[derive(Debug)]
+  static ref _MAX_U256 : Uint256 = Uint256::max_value();
+}
+
 
 
 impl DecimalUint256{
 
-    pub fn DECIMAL_FRACTIONAL_U256()-> Uint256 { Uint256::from_str_radix("1_000_000_000_000_000_000", 10).unwrap() }
+  /// Create a 1.0 Decimal
+  pub fn one() -> DecimalUint256 {
+    DecimalUint256( DECIMAL_FRACTIONAL_U256.clone() )
+  }
 
-    pub fn MAX() -> DecimalUint256{  DecimalUint256(Uint256::max_value())  }
+  pub fn max_256() -> DecimalUint256 {
+    DecimalUint256( Uint256::max_value() )
+  }  
 
+  /// Convert x% into Decimal
+  pub fn percent(x: Uint256) -> DecimalUint256 {
+    DecimalUint256(x  * Uint256::from_str_radix("10_000_000_000_000_000", 10).unwrap())
+  }
 
+  /// Convert permille (x/1000) into Decimal
+  pub fn permille(x: Uint256) -> DecimalUint256 {
+    DecimalUint256(x  * Uint256::from_str_radix("1_000_000_000_000_000", 10).unwrap())
+  } 
+
+  pub fn is_zero(&self) -> bool {
+    self.0 == Uint256::from_bytes_le([0])
+ }
+
+  /// Returns the ratio (nominator / denominator) as a Decimal
+  pub fn from_ratio<A: Into<Uint256>, B: Into<Uint256>>(nominator: A, denominator: B) -> Decimal {
+    let nominator: Uint256 = nominator.into();
+    let denominator: Uint256 = denominator.into();
+    if denominator == 0 {
+        panic!("Denominator must not be zero");
+    }
+    // TODO: better algorithm with less rounding potential?
+    Decimal(nominator * DECIMAL_FRACTIONAL / denominator)
+  }
+}
+
+impl ops::Add for DecimalUint256 {
+  type Output = Self;
+
+  fn add(self, other: Self) -> Self {
+    DecimalUint256(self.0 + other.0)
+  }
+}
+
+impl ops::Sub for DecimalUint256 {
+  type Output = Self;
+
+  fn sub(self, other: Self) -> Self {
+    DecimalUint256(self.0 - other.0)
+  }
 }
 
 impl Decimal {
@@ -405,6 +462,12 @@ fn main()
 {
   //Just an example of the idea of adding numbers greater than u128
   let max128 = u128::MAX;
+
+  
+  println!("{:?}", Decimal::one());
+  
+
+  println!("{:?}",DecimalUint256::one() + DecimalUint256::one());
   
   println!("{:x?}",br#""8.76""#);
 
@@ -435,6 +498,14 @@ mod test {
     // use base64;
     use std::convert::TryInto;
     use num256::uint256::Uint256;
+
+    #[test]
+    fn u256_percent() {
+      let fifty_perc = Uint256::from_str("50").unwrap();
+      let half = Uint256::from_str("2").unwrap();
+      let value = DecimalUint256::percent(fifty_perc);
+      assert_eq!(value.0, Uint256::from_str("5_000_000_000_000_000_00").unwrap() );
+    }
 
     #[test]
     fn u256_zero(){
